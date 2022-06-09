@@ -1,92 +1,32 @@
+require('dotenv-safe').config();
 const database = require('../models');
 const bcrypt = require('bcrypt');
-
+const jwt = require('jsonwebtoken');
 class AuthenticationController {
-    static async readAllUsers(req, res) {
+    static async login(req, res) {
         try {
-            const allUsers = await database.Users.findAll();
-            allUsers.forEach(user => {
-                user.password = null;
-            });
-            return res.status(200).json(allUsers);
-        } catch (error) {
-            return res.status(500).json(error.message);
-        }
-    }
-
-    static async readAllNames(req, res) {
-        try {
-            const allNames = await database.Users.findAll({ attributes: ['id', 'firstName', 'lastName'] });
-            return res.status(200).json(allNames);
-        } catch (error) {
-            return res.status(500).json(error.message);
-        }
-    }
-
-    static async readUserById(req, res) {
-        const { id } = req.params;
-        try {
-            const user = await database.Users.findOne({ 
+            const selectedUser = await database.Users.findOne({ 
                 where: { 
-                    id: Number(id) 
+                    email: req.body.email
                 } 
             });
-            if(user == null) return res.status(200).json({ message: `User ${id} not found!` });
-            user.password = null;
-            return res.status(200).json(user);
+            
+            if(!selectedUser) return res.status(404).json({ message: 'Incorrect Email or Password' });
+            const isValid = bcrypt.compareSync(req.body.password, selectedUser.password);
+            if(!isValid) return res.status(404).json({ message: 'Incorrect Email or Password' });
+
+            var token;
+            const expiresIn = parseInt(process.env.EXPIRES);
+            if(req.body.remember){
+                token = jwt.sign({user_id: selectedUser.id}, process.env.SECRET);
+            } else {
+                token = jwt.sign({user_id: selectedUser.id}, process.env.SECRET, {expiresIn});
+            }
+            return res.status(200).header('authorization_token', token).json({ message: 'User logged!' });
         } catch (error) {
             return res.status(500).json(error.message);
-        }
-    }
-
-    static async createUser(req, res) {
-        const formUser = req.body;
-        const selectUser = await database.Users.findOne({where: {email: formUser.email}});
-        if(selectUser) return res.status(507).json({ message: 'Email has been registered' });
-        if(formUser.password === null) return res.status(400).json({ message: 'Password is required' });
-        if(formUser.profile_id === null) formUser.profile_id = 4;
-        try {
-            formUser.password = bcrypt.hashSync(formUser.password, 10);
-            const user = await database.Users.create(formUser);
-            user.password = null;
-            return res.status(201).json(user);
-        } catch (error) {
-            return res.status(500).json(error.message);
-        }
-    }
-
-    static async updateUser(req, res) {
-        const { id } = req.params;
-        const formUser = req.body;
-        try {
-            const user = await database.Users.findByPk(id);
-            if(user === null) return res.status(404).json({ message: 'User not found' });
-            await database.Users.update(formUser, {
-                where: {
-                    id: Number(id)
-                }
-            })
-            return res.status(200).json({ message: `ID ${id} updated` });
-        } catch (error) {
-            return res.status(500).json(error.message);
-        }
-    }
-
-    static async deleteUser(req, res) {
-        const { id } = req.params;
-        try {
-            const user = await database.Users.findByPk(id);
-            if(user === null) return res.status(404).json({ message: 'User not found' });
-            await database.Users.destroy({
-                where: {
-                    id: Number(id)
-                }
-            })
-            return res.status(200).json({ message: `ID ${id} deleted` });
-        } catch (error) {
-            res.status(500).json(error.message);
         }
     }
 }
 
-module.exports = UserController
+module.exports = AuthenticationController;
