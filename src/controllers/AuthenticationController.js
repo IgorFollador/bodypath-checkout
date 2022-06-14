@@ -22,9 +22,23 @@ class AuthenticationController {
             } else {
                 token = jwt.sign({user_id: selectedUser.id}, process.env.SECRET, {expiresIn});
             }
-            return res.status(200).header('authorization_token', token).json({ message: 'User logged!' });
+            return res.status(200).json({ token: token });
         } catch (error) {
             return res.status(500).json(error.message);
+        }
+    }
+
+    static async verifyJWT(req, res, next) {
+        let token = req.headers['authorization'];
+        if(!token) return res.sendStatus(401);
+        token = token.replace('Bearer', "");
+            
+        try {
+            const decoded = jwt.verify(token, process.env.SECRET);
+            res.locals.username = decoded.username;
+            next;    
+        } catch (error) {
+            res.sendStatus(401).json({ message: "Unauthorized!" })
         }
     }
 }

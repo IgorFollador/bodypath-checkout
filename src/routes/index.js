@@ -10,7 +10,7 @@ module.exports = app => {
     });
 
     app.use(bodyParser.json());
-    
+    // app.use(AuthenticationController.verifyJWT);
     app.get('/', (req, res) => res.send('Checkout Microservice'));
     app.post('/login', AuthenticationController.login)
 }
