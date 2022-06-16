@@ -18,9 +18,9 @@ class AuthenticationController {
             var token;
             const expiresIn = parseInt(process.env.EXPIRES);
             if(req.body.remember){
-                token = jwt.sign({user_id: selectedUser.id}, process.env.SECRET);
+                token = jwt.sign({id: selectedUser.id}, process.env.SECRET);
             } else {
-                token = jwt.sign({user_id: selectedUser.id}, process.env.SECRET, {expiresIn});
+                token = jwt.sign({id: selectedUser.id}, process.env.SECRET, {expiresIn});
             }
             return res.status(200).json({ token: token });
         } catch (error) {
