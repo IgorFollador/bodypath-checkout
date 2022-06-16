@@ -18,11 +18,16 @@ class AuthenticationController {
             var token;
             const expiresIn = parseInt(process.env.EXPIRES);
             if(req.body.remember){
-                token = jwt.sign({user_id: selectedUser.id}, process.env.SECRET);
+                token = jwt.sign({userId: selectedUser.id}, process.env.SECRET);
             } else {
-                token = jwt.sign({user_id: selectedUser.id}, process.env.SECRET, {expiresIn});
+                token = jwt.sign({userId: selectedUser.id}, process.env.SECRET, {expiresIn});
             }
-            return res.status(200).json({ token: token });
+            var data = {
+                token: token,
+                username: selectedUser.firstName, 
+                userId: selectedUser.id
+            }
+            return res.status(200).json(data);
         } catch (error) {
             return res.status(500).json(error.message);
         }
