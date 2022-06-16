@@ -24,7 +24,8 @@ class AuthenticationController {
             }
             var data = {
                 token: token,
-                user: selectedUser.firstName
+                username: selectedUser.firstName, 
+                userId: selectedUser.id
             }
             return res.status(200).json(data);
         } catch (error) {
